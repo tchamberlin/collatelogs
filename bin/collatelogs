@@ -1,0 +1,5 @@
+#!/usr/bin/env python
+
+from collatelogs import __main__
+
+__main__()
