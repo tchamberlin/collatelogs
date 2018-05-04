@@ -1,3 +1,9 @@
+# -*- coding: utf-8 -*-
+
+"""Command-Line Interface for collatelogs"""
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 import argparse
 from glob import glob
 import os
@@ -5,9 +11,13 @@ import os
 from .collatelogs import format_simple, format_advanced
 from .util import read_config
 
+
 DEFAULT_CONFIG_PATH = os.path.realpath(os.path.join(os.path.dirname(__file__), 'config.yaml'))
 
+
 def get_value_from_arg_or_config(key, args, config):
+    """Return args[key] or config[key] or raise error"""
+
     if key in args.__dict__ and args.__dict__[key]:
         value = args.__dict__[key]
     else:
@@ -21,6 +31,8 @@ def get_value_from_arg_or_config(key, args, config):
 
 
 def parse_args():
+    """Perform argument parsing"""
+
     parser = argparse.ArgumentParser()
 
     parser.add_argument(
@@ -118,8 +130,9 @@ def parse_args():
     return parsed_args
 
 
-
 def main():
+    """Entry point"""
+
     args = parse_args()
     if args.timestamp_length:
         lines = format_simple(

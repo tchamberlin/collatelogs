@@ -1,9 +1,8 @@
-#! /usr/bin/env python
 # -*- coding: utf-8 -*-
 
 """Collates a given set of log files"""
 
-from __future__ import print_function
+from __future__ import absolute_import, print_function, unicode_literals
 
 import os
 import sys
@@ -133,7 +132,6 @@ def format_advanced(
                 bad_lines.append(line)
             elif bad_line_behavior == 'error':
                 raise
-
 
     # If we are not allowing duplicates, remove duplicates
     if not allow_duplicates:
