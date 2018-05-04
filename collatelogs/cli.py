@@ -6,13 +6,32 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 import argparse
 from glob import glob
+import logging
 import os
 
 from .collatelogs import format_simple, format_advanced
 from .util import read_config
 
+logger = logging.getLogger(__name__)
 
-DEFAULT_CONFIG_PATH = os.path.realpath(os.path.join(os.path.dirname(__file__), 'config.yaml'))
+CONFIG_SEARCH_PATHS = [
+    '~/.cl_config.yaml',
+    './config.yaml',
+    os.path.realpath(os.path.join(os.path.dirname(__file__), 'example_config.yaml'))
+]
+
+def find_config_file():
+    """Search CONFIG_SEARCH_PATHS until config file is found; open and return it"""
+    for config_path in CONFIG_SEARCH_PATHS:
+        logger.debug("Searching for config file at: %s", config_path)
+        try:
+            config = read_config(config_path)
+            logger.debug("Found config file at: %s", config_path)
+            return config
+        except IOError:
+            pass
+
+    raise ValueError("Could not find any config file!")
 
 
 def get_value_from_arg_or_config(key, args, config):
@@ -20,12 +39,14 @@ def get_value_from_arg_or_config(key, args, config):
 
     if key in args.__dict__ and args.__dict__[key]:
         value = args.__dict__[key]
+        logger.debug("Found key %s in args", key)
     else:
         try:
             value = config[key]
         except KeyError:
             raise ValueError('{} must be specified either as an argument or '
                              'in the config file!'.format(key))
+        logger.debug("Found key %s in config file", key)
 
     return value
 
@@ -90,8 +111,15 @@ def parse_args():
     )
     parser.add_argument(
         '-c', '--config',
-        help="The path to the config file",
-        default=DEFAULT_CONFIG_PATH
+        help="The path to the config file. If this is not given, the "
+             "following paths will be searched: {}".format(CONFIG_SEARCH_PATHS),
+    )
+    parser.add_argument(
+        '-v', '--verbose',
+        action='store_true',
+        # choices=('debug', 'info', 'warning', 'error',
+        #          'DEBUG', 'INFO', 'WARNING', 'ERROR'),
+        help="Increase logging verbosity"
     )
 
     config_group = parser.add_argument_group(
@@ -134,6 +162,11 @@ def main():
     """Entry point"""
 
     args = parse_args()
+
+    if args.verbose:
+        logging.getLogger().setLevel(logging.DEBUG)
+        logger.debug("Set logging level to DEBUG")
+
     if args.timestamp_length:
         lines = format_simple(
             log_paths=args.logs,
@@ -143,7 +176,10 @@ def main():
             no_strip=args.no_strip
         )
     else:
-        config = read_config(args.config)
+        if args.config:
+            config = read_config(args.config)
+        else:
+            config = find_config_file()
         prefix_regexes = get_value_from_arg_or_config('prefix_regexes', args, config)
         date_format = get_value_from_arg_or_config('date_format', args, config)
         prefix_output_format = get_value_from_arg_or_config('prefix_output_format', args, config)
