@@ -2,13 +2,15 @@ from setuptools import setup
 
 setup(
     name='collatelogs',
-    version='0.1.2',
+    version='0.1.3',
     description='A simple log collator',
     url='http://github.com/tchamberlin/collatelogs',
     author='Thomas Chamberlin',
     license='MIT',
     packages=['collatelogs'],
     scripts=['bin/collatelogs'],
+    data_files=['collatelogs/config.yaml'],
+    install_requires=['python-dateutil>=1.5', 'pyyaml==3.12', 'tqdm==4.23.1'],
     zip_safe=True,
     classifiers=[
         # How mature is this project? Common values are
@@ -22,7 +24,7 @@ setup(
         # 'Topic :: Software Development :: Build Tools',
 
         # Pick your license as you wish (should match "license" above)
-         'License :: OSI Approved :: MIT License',
+        'License :: OSI Approved :: MIT License',
 
         # Specify the Python versions you support here. In particular, ensure
         # that you indicate whether you support Python 2, Python 3 or both.
