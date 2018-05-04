@@ -2,15 +2,15 @@ from setuptools import setup
 
 setup(
     name='collatelogs',
-    version='0.1.3',
+    version='0.1.4',
     description='A simple log collator',
     url='http://github.com/tchamberlin/collatelogs',
     author='Thomas Chamberlin',
     license='MIT',
     packages=['collatelogs'],
     scripts=['bin/collatelogs'],
-    data_files=['collatelogs/config.yaml'],
-    install_requires=['python-dateutil>=1.5', 'pyyaml==3.12', 'tqdm==4.23.1'],
+    include_package_data=True,
+    install_requires=['python-dateutil', 'pyyaml', 'tqdm'],
     zip_safe=True,
     classifiers=[
         # How mature is this project? Common values are
