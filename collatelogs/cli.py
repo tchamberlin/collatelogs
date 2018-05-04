@@ -2,8 +2,8 @@ import argparse
 from glob import glob
 import os
 
-from collatelogs.collatelogs import format_simple, format_advanced
-from collatelogs.util import read_config
+from .collatelogs import format_simple, format_advanced
+from .util import read_config
 
 DEFAULT_CONFIG_PATH = os.path.realpath(os.path.join(os.path.dirname(__file__), 'config.yaml'))
 

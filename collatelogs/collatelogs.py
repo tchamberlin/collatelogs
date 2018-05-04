@@ -22,8 +22,7 @@ except ImportError:
     warnings.warn("tqdm not found; progress bars will not function. "
                   "Consider running this in an environment with tqdm installed")
 
-from collatelogs import cli
-from collatelogs.util import (
+from .util import (
     compile_regexes,
     get_user_from_path,
     match_first,
@@ -195,7 +194,3 @@ def format_simple(
         log_lines = set(log_lines)
 
     return log_lines
-
-
-if __name__ == '__main__':
-    cli.main()
