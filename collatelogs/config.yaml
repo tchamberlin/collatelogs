@@ -7,5 +7,9 @@ prefix_output_format: '{timestamp} - {filename} - {user} - {message}'
 # Define the regexes that will be used to parse each line's prefix
 # NOTE: These are executed in order, top-down (ascending)
 prefix_regexes:
+  # Example:
+  # 2018-04-20 11:30:01 circus[1624] [INFO] circusd-stats stopped
   - '(?P<timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) (?P<module>\S+) (?P<level>\S+) (?P<message>.*)'
+  # Example:
+  # 2018-05-04 15:25:40,049 - path.to.function - DEBUG - message text
   - '(?P<timestamp>.+) - (?P<module>.+) - (?P<level>.+) - (?P<message>.*)'
