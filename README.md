@@ -14,17 +14,42 @@ However, the world is not perfect, and you may be dealing with a variety of log 
 
 ## Usage
 
-Use default settings; parse given logs. This probably won't work unless your log files happen to have the same prefix structure as those in the examples:
+This script probably won't work out of the box, unless your log files happen to have a prefix structure that matches one of the regular expressions in the example configuration. So, you'll probably see something like this:
 
     $ collatelogs PATH_WITH_LOGS/*.log
+    <snip>
+    ValueError: Line 'some line from the logs' did not match against any of the given regexes!
 
-More likely than not, you will get blank output here. If you run it again with `--bad-line-behavior error`, you will see why:
-    
-    $ collatelogs PATH_WITH_LOGS/*.log -b error
-    Processing log lines:   0%|                                                                                        <snip>
-    ValueError: Line '2018-05-03 13:56:00 [32279] | RPCclient::rexec:Connection not yet established, Call not made\n' did not match against any of the given regexes! 
+So, the first thing you will need to do is define information on the expected log prefixes.
 
-So, you will need to define your own regex(es) to parse your logs.
+### The config file
+
+For ease of use, it is recommended that you create a config file to avoid having to pass a bunch of arguments every time you run the script. An example is included in the repo, at `collatelogs/example_config.yaml`. This will also be installed alongside the package.
+
+The recommended place for a permanent config file is `~/.cl_config.yaml`. Other paths searched are listed in the help.
+
+It is probably easiest to `$ cp example_config.yaml ~/.cl_config.yaml` before beginning to make your changes.
+
+#### `date_format` (optional)
+
+The format of the timestamp output. This will have no affect unless `--parse-timestamps` is passed as an argument at runtime, or `parse_timestamps` is set to `True` in the config file.
+
+#### `line_output_format` (required)
+
+A PEP-3101 compliant format string that defines the output format for each line. The keywords here must be a subset of the regex capturing groups _plus_ any keywords contributed by the meta handlers (see below). Put another way: if you try to include keywords here that aren't being captured in each regular expression, you are going to get an error.
+
+
+#### `log_parsing_info`
+then begin replacing the example entries in `log_parsing_info` with your own entries (leaving the examples will only slow down execution if they are never going to match anything).
+
+Each `dict` in the `log_parsing_info` `list` has four possible parts:
+
+* `regex` (required): The regular expression used to parse log lines
+* `timestamp_format` (optional): The format of the timestamp for lines captured by `regex`. If this is not given, `dateutil.parse` will be used to generically consume the timestamp, but this will be ~5x slower!
+* `log_timezone` (optional): The timezone that the log timestamps were output in. If this is not given, it defaults to the local timezone of your computer
+* `output_timezone` (optional): The timezone that the output log timestamps will be in. If this is not given, it defaults to the local timezone of your computer
+
+Note that this must utilize capturing groups such that every keyword in the `line_output_format` format string is represented. 
 
 
 ### Creating Regex Prefixes and Output Format Strings
@@ -55,17 +80,16 @@ The above is what we want our regex to output via its `groupdict`. So, what regu
 
 Because this prefix format is delimited by spaces (and I'm not exactly a regex expert), the regex is pretty verbose. I find that a tool such as regex 101 helps a lot: https://regex101.com/r/bTzhf4/1
 
-Anyway, now that we have the regex, we can pass it in via `--prefix-regexes`:
+Anyway, now that we have the regex, we can add it to the config file as per the above section.
 
-    $ collatelogs PATH_WITH_LOGS/*.log --prefix-regex '(?P<timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) (?P<module>\S+) (?P<level>\S+) (?P<message>.*)'
-    <hopefully sensible output>
+### `meta_handlers`
 
-Great! But we don't want to type that every time...
+These handle metadata associated with each log file, making it available to `line_output_format` as keyword arguments.
 
-### Creating your own `config.yaml`
+There are currently two available handlers:
+* `user`: The owner of the log file
+* `filename`: The filename (base name) of the log file
 
-For ease of use, it is recommended that you create a config file to avoid having to pass a bunch of arguments every time you run the script. An example is included in the repo, at `collatelogs/example_config.yaml`. This will also be installed alongside the package.
+You will see that these are both present in the example `line_output_format`
 
-The recommended place for a permanent config file is `~/.cl_config.yaml`. Other paths searched are listed in the help.
-
-It is probably easiest to `$ cp example_config.yaml ~/.cl_config.yaml`, wipe out the existing items in the `prefix_regexes` section (they will only slow down execution if they are never going to match anything), then add your regex in their place.
+There's currently no clean way of adding your own, but you can easily hack them into `metahandlers.py` by defining them, then mapping a name to them in `all_meta_handlers`.

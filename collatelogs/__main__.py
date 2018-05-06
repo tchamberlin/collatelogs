@@ -1,7 +1,5 @@
 import logging
-
-logging.basicConfig()
-
 from . import cli
 
+logging.basicConfig()
 cli.main()

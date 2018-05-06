@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='collatelogs',
-    version='0.1.5',
+    version='0.2.0',
     description='A simple log collator',
     url='http://github.com/tchamberlin/collatelogs',
     author='Thomas Chamberlin',
