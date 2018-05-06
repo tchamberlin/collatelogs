@@ -1,16 +1,19 @@
+# -*- coding: utf-8 -*-
+
 from setuptools import setup
 
 setup(
     name='collatelogs',
-    version='0.1.5',
+    version='0.2.0',
     description='A simple log collator',
     url='http://github.com/tchamberlin/collatelogs',
     author='Thomas Chamberlin',
+    author_email='tchamberlin@users.noreply.github.com',
     license='MIT',
     packages=['collatelogs'],
     scripts=['bin/collatelogs'],
     include_package_data=True,
-    install_requires=['python-dateutil', 'pyyaml', 'tqdm'],
+    install_requires=['python-dateutil', 'pyyaml', 'tqdm', 'tzlocal', 'pytz'],
     zip_safe=True,
     classifiers=[
         # How mature is this project? Common values are
@@ -38,7 +41,7 @@ setup(
         'Programming Language :: Python :: 3.5',
     ],
 
-    
+
 
 
 )

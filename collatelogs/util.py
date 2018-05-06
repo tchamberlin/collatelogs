@@ -4,11 +4,47 @@
 
 from __future__ import absolute_import, print_function, unicode_literals
 
-import os
-import pwd
+import logging
 import re
+from string import Formatter
 
 import yaml
+
+
+logger = logging.getLogger(__name__)
+formatter = Formatter()
+
+
+
+def check_that_regexes_are_all_supersets_of_format_string(regexes, meta, format_string):
+    return all([check_that_regex_is_superset_of_format_string(regex, meta, format_string) for regex in regexes])
+
+
+def check_that_regex_is_superset_of_format_string(regex, meta, format_string):
+    """Parse regex and format_string; determine all format keywords exist in regex groups"""
+    # Determine which keywords exist in the format string
+    format_string_keywords = extract_keywords_from_format_string(format_string)
+    logger.debug("Got format string keywords: %s", format_string_keywords)
+    # Determine which groups exist in the regex
+    regex_groups = extract_groups_from_compiled_regex(regex)
+
+    logger.debug("Got regex groups: %s", regex_groups)
+    logger.debug("meta keywords: %s", meta)
+    # import ipdb; ipdb.set_trace()
+    # Determine whether all format keywords exist in the regex as groups
+    return set(regex_groups + meta).issuperset(format_string_keywords)
+
+
+def extract_keywords_from_format_string(format_string):
+    """Determine which keywords exist in given format string"""
+
+    return [keyword for _, keyword, _, _ in formatter.parse(format_string)]
+
+
+def extract_groups_from_compiled_regex(regex):
+    """Determine which groups exist in given (compiled!) regex"""
+
+    return regex.groupindex.keys()
 
 
 def read_config(config_path):
@@ -18,24 +54,27 @@ def read_config(config_path):
         return yaml.load(yaml_file)
 
 
-def match_first(string, regexes):
+def match_first(string, prefix_infos):
     """Match string against each regex. Return first match, or None"""
 
-    for regex in regexes:
-        m = re.match(regex, string)
-        if m:
-            return m.groupdict()
+    for prefix_info in prefix_infos:
+        regex = prefix_info['regex']
+        match = re.match(regex, string)
+        if match:
+            prefix_info['match'] = match.groupdict()
+            return prefix_info
 
     return None
 
 
-def get_user_from_path(path):
-    """Get the username of the owner of the given file"""
+def compile_regexes(prefix_parsing_info):
+    """Compile all regexes in prefix_parsing_info, in place"""
 
-    return pwd.getpwuid(os.stat(path).st_uid).pw_name
+    for info in prefix_parsing_info:
+        info['regex'] = re.compile(info['regex'])
 
 
-def compile_regexes(regexes):
-    """Compile all regexes and return them as a list"""
+def convert_timezone(dt, tz_from, tz_to):
+    """Convert dt from tz_from to tz_to"""
 
-    return [re.compile(regex) for regex in regexes]
+    return tz_from.localize(dt).astimezone(tz_to)
