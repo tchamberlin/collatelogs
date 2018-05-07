@@ -1,11 +1,18 @@
 # -*- coding: utf-8 -*-
 
+import os
 from setuptools import setup
+
+script_dir = os.path.abspath(os.path.dirname(__file__))
+with open(os.path.join(script_dir, 'README.md'), encoding='utf-8') as readme_file:
+    long_description = readme_file.read()
 
 setup(
     name='collatelogs',
-    version='0.2.0',
+    version='0.2.1',
     description='A simple log collator',
+    long_description=long_description,
+    long_description_content_type='text/markdown',
     url='http://github.com/tchamberlin/collatelogs',
     author='Thomas Chamberlin',
     author_email='tchamberlin@users.noreply.github.com',
