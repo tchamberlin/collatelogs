@@ -30,9 +30,8 @@ def check_that_regex_is_superset_of_format_string(regex, meta, format_string):
 
     logger.debug("Got regex groups: %s", regex_groups)
     logger.debug("meta keywords: %s", meta)
-    # import ipdb; ipdb.set_trace()
     # Determine whether all format keywords exist in the regex as groups
-    return set(regex_groups + meta).issuperset(format_string_keywords)
+    return set(regex_groups).union(set(meta)).issuperset(format_string_keywords)
 
 
 def extract_keywords_from_format_string(format_string):

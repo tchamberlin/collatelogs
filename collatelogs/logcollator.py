@@ -10,6 +10,13 @@ import sys
 import warnings
 
 try:
+    from tzlocal import get_localzone
+except ImportError:
+    warnings.warn("tzlocal not found; timezone conversion will not be possible. That is, if "
+                  "a non-local timezone is specified in the config, an error will be raised. "
+                  "Consider running this in an environment with dateutil installed")
+
+try:
     import dateutil.parser as dp
 except ImportError:
     warnings.warn(
@@ -126,6 +133,8 @@ class LogCollator(object):
                     tz_from=timestamp_input_timezone,
                     tz_to=timestamp_output_timezone
                 )
+            else:
+                parsed_timestamp = get_localzone().localize(parsed_timestamp)
 
             kwargs_for_format['timestamp'] = parsed_timestamp.strftime(
                 self.timestamp_output_format)

@@ -9,7 +9,7 @@ with open(os.path.join(script_dir, 'README.md'), encoding='utf-8') as readme_fil
 
 setup(
     name='collatelogs',
-    version='0.2.1',
+    version='0.2.2',
     description='A simple log collator',
     long_description=long_description,
     long_description_content_type='text/markdown',
