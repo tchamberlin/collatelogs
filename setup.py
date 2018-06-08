@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 
 import os
+# Enable UTF support in both Python 2 and 3: https://stackoverflow.com/a/10975371/1883424
+from io import open
 from setuptools import setup
 
 script_dir = os.path.abspath(os.path.dirname(__file__))
