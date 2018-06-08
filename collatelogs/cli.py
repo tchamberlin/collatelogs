@@ -26,8 +26,10 @@ except ImportError:
 
 from .logcollator import LogCollator
 from .util import read_config
+from .handlers import TqdmLoggingHandler
 
 logger = logging.getLogger(__name__)
+
 
 CONFIG_SEARCH_PATHS = [os.path.realpath(path) for path in [
     os.path.join(os.path.expanduser('~'), '.cl_config.yaml'),
@@ -155,10 +157,10 @@ def parse_args():
     )
     parser.add_argument(
         '-b', '--bad-line-behavior',
-        choices=('keep', 'discard', 'error'),
+        choices=('keep', 'discard', 'warn', 'error'),
         help="Defines the action taken when a line is found that doesn't match any of the given line regexes. "
              "keep: Keep the line in the output (this is almost certainly a _bad_ idea). discard: silently discard "
-             "non-matching lines. error: Raise an error at the first instance of non-matching"
+             "non-matching lines. warn: Log warnings for each line that has been skipped. error: Raise an error at the first instance of non-matching"
     )
     parser.add_argument(
         '--allow-duplicates',
@@ -254,5 +256,9 @@ def main():
         bad_line_behavior=args.bad_line_behavior,
         allow_duplicates=args.allow_duplicates,
     ).collate(show_progress=not args.no_progress)
+    
+    # Prevent IOError after piping to less or similar: https://stackoverflow.com/a/30091579/1883424
+    from signal import signal, SIGPIPE, SIG_DFL
+    signal(SIGPIPE, SIG_DFL) 
 
     print("\n".join(lines))

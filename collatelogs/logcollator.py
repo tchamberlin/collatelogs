@@ -4,10 +4,14 @@
 
 from __future__ import absolute_import, print_function, unicode_literals
 
+import contextlib
 from datetime import datetime
 import logging
 import sys
 import warnings
+
+from .handlers import TqdmLoggingHandler
+
 
 try:
     from tzlocal import get_localzone
@@ -140,8 +144,8 @@ class LogCollator(object):
                 self.timestamp_output_format)
 
         reformatted = self.line_output_format.format(**kwargs_for_format)
-        if self.strip_lines:
-            reformatted = reformatted.strip()
+        # if self.strip_lines:
+        #     reformatted = reformatted.strip()
 
         if self.timestamp_output_format:
             return (parsed_timestamp, reformatted)
@@ -149,6 +153,9 @@ class LogCollator(object):
 
     def process_path_map(self, path_map, progress=None, update_interval=100):
         """Process lines in path_map based on other keys"""
+
+        if progress:
+            logger.addHandler(TqdmLoggingHandler())
 
         all_log_lines = []
         for log_path, log_lines in path_map.items():
@@ -160,6 +167,10 @@ class LogCollator(object):
             # Amend all lines
             for line_number, line in enumerate(log_lines):
                 try:
+                    if self.strip_lines:
+                        line = line.strip()
+                    if not line:
+                        continue
                     amended_line = self.amend_prefix(line, meta=path_meta_keywords)
                     all_log_lines.append(amended_line)
                 except ValueError:
@@ -167,7 +178,11 @@ class LogCollator(object):
                         all_log_lines.append(line)
                     elif self.bad_line_behavior == 'error':
                         raise
-                    # Otherwise discard
+                    elif self.bad_line_behavior == 'warn':
+                        logger.warning("No match found; skipped: %r", line)
+                    else:
+                        # Otherwise discard
+                        pass
 
                 # line_number is only used to enforce the update_interval
                 if progress and line_number % update_interval == 0:
