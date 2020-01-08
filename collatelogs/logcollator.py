@@ -127,18 +127,22 @@ class LogCollator(object):
             else:
                 parsed_timestamp = dp.parse(kwargs_for_format['timestamp'])
 
-            timestamp_input_timezone = parsing_info.get('timestamp_input_timezone', None)
-            timestamp_output_timezone = parsing_info.get('timestamp_output_timezone', None)
-            # If either timestamp_input_timezone or timestamp_output_timezone
-            # is given, the user wants to convert time zone
-            if timestamp_input_timezone or timestamp_output_timezone:
-                parsed_timestamp = convert_timezone(
-                    dt=parsed_timestamp,
-                    tz_from=timestamp_input_timezone,
-                    tz_to=timestamp_output_timezone
-                )
+            if not parsed_timestamp.tzinfo:
+                timestamp_input_timezone = parsing_info.get('timestamp_input_timezone', None)
+                timestamp_output_timezone = parsing_info.get('timestamp_output_timezone', None)
+                # If either timestamp_input_timezone or timestamp_output_timezone
+                # is given, the user wants to convert time zone
+                if timestamp_input_timezone or timestamp_output_timezone:
+                    parsed_timestamp = convert_timezone(
+                        dt=parsed_timestamp,
+                        tz_from=timestamp_input_timezone,
+                        tz_to=timestamp_output_timezone
+                    )
+                else:
+                    parsed_timestamp = get_localzone().localize(parsed_timestamp)
+
             else:
-                parsed_timestamp = get_localzone().localize(parsed_timestamp)
+                logger.info("Timestamp {} already has timezone data; skipping further translation".format(parsed_timestamp))
 
             kwargs_for_format['timestamp'] = parsed_timestamp.strftime(
                 self.timestamp_output_format)
