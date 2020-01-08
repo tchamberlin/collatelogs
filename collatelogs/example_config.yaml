@@ -19,6 +19,14 @@ log_parsing_info:
   - regex: '(?P<timestamp>.+) - (?P<module>.+) - (?P<level>.+) - (?P<message>.*)'
     timestamp_input_format: '%Y-%m-%d %H:%M:%S,%f'
 
+  - regex: '>\s+\d+\s+(?P<timestamp>[0-9:]+) (?P<module>\w+) (?P<message>.*)'
+    # Don't specify this here; it will default to 1900-01-01. By leaving it out we use dateutil.parse,
+    # which handles this properly
+    # timestamp_input_format: '%H:%M:%S'
+    timestamp_input_timezone: UTC
+    filename_date_regex: '.*(?P<date>\d{4}_\d{2}_\d{2}_\d{2}).*'
+    filename_date_format: '%Y_%m_%d'
+
 no_strip: False
 allow_duplicates: False
 bad_line_behavior: 'error'
