@@ -50,7 +50,7 @@ def read_config(config_path):
     """Given path to yaml file, return its contents as a dict"""
 
     with open(config_path) as yaml_file:
-        return yaml.load(yaml_file)
+        return yaml.load(yaml_file, Loader=yaml.Loader)
 
 
 def match_first(string, prefix_infos):
