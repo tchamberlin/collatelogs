@@ -15,23 +15,44 @@ logger = logging.getLogger(__name__)
 formatter = Formatter()
 
 
-
 def check_that_regexes_are_all_supersets_of_format_string(regexes, meta, format_string):
-    return all([check_that_regex_is_superset_of_format_string(regex, meta, format_string) for regex in regexes])
+    return all(
+        [not get_missing_groups(regex, meta, format_string) for regex in regexes]
+    )
 
 
-def check_that_regex_is_superset_of_format_string(regex, meta, format_string):
+def debug_regexes(regexes, meta, format_string):
+    return {regex: get_missing_groups(regex, meta, format_string) for regex in regexes}
+
+
+def debug_regexes_str(regexes, meta, format_string):
+    lines = []
+
+    for regex in regexes:
+        missing_groups = get_missing_groups(regex, meta, format_string)
+        if missing_groups:
+            lines.append(
+                f"'{regex.pattern}' is missing groups {missing_groups} "
+                f"required by output format string '{format_string}'"
+            )
+
+    return lines
+
+
+def get_missing_groups(regex, meta, format_string):
     """Parse regex and format_string; determine all format keywords exist in regex groups"""
     # Determine which keywords exist in the format string
     format_string_keywords = extract_keywords_from_format_string(format_string)
-    logger.debug("Got format string keywords: %s", format_string_keywords)
+    # logger.debug("Got format string keywords: %s", format_string_keywords)
     # Determine which groups exist in the regex
     regex_groups = extract_groups_from_compiled_regex(regex)
 
-    logger.debug("Got regex groups: %s", regex_groups)
-    logger.debug("meta keywords: %s", meta)
+    # logger.debug("Got regex groups: %s", regex_groups)
+    # logger.debug("meta keywords: %s", meta)
     # Determine whether all format keywords exist in the regex as groups
-    return set(regex_groups).union(set(meta)).issuperset(format_string_keywords)
+    # foo =  set(regex_groups).union(set(meta)).issuperset(format_string_keywords)
+    missing = set(format_string_keywords).difference(set(regex_groups).union(set(meta)))
+    return missing
 
 
 def extract_keywords_from_format_string(format_string):
@@ -53,15 +74,16 @@ def read_config(config_path):
         return yaml.load(yaml_file, Loader=yaml.Loader)
 
 
-def match_first(string, prefix_infos):
+def match_first(string, prefix_infos, key):
     """Match string against each regex. Return first match, or None"""
 
     for prefix_info in prefix_infos:
-        regex = prefix_info['regex']
-        match = re.match(regex, string)
-        if match:
-            prefix_info['match'] = match.groupdict()
-            return prefix_info
+        regex = prefix_info.get(key)
+        if regex:
+            match = re.match(regex, string)
+            if match:
+                prefix_info["match"] = match.groupdict()
+                return prefix_info
 
     return None
 
@@ -70,7 +92,7 @@ def compile_regexes(prefix_parsing_info):
     """Compile all regexes in prefix_parsing_info, in place"""
 
     for info in prefix_parsing_info:
-        info['regex'] = re.compile(info['regex'])
+        info["line_regex"] = re.compile(info["line_regex"])
 
 
 def convert_timezone(dt, tz_from, tz_to):

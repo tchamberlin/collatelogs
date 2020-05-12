@@ -1,0 +1,13 @@
+# Default configuration file
+
+# Defines how timestamps are formatted in output
+timestamp_output_format: '%Y-%m-%d %H:%M:%S %Z'
+# Available meta_handlers: owner, filename
+# Defines how prefixes are formatted in output
+line_output_format: '{timestamp} - {filename} - {owner} - {message}'
+# TODO: This should be swapped
+no_strip: False
+# TODO: This should be swapped
+allow_duplicates: False
+bad_line_behavior: 'error'
+no_progress: False

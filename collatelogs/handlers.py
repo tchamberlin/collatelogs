@@ -2,8 +2,9 @@ import logging
 import sys
 import tqdm
 
+
 class TqdmLoggingHandler(logging.Handler):
-    def __init__ (self, level=logging.NOTSET):
+    def __init__(self, level=logging.NOTSET):
         super(self.__class__, self).__init__(level)
 
     def emit(self, record):

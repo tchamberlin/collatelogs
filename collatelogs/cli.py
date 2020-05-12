@@ -14,30 +14,37 @@ import warnings
 try:
     from pytz import timezone
 except ImportError:
-    warnings.warn("pytz not found; timezone conversion will not be possible. That is, if "
-                  "a non-local timezone is specified in the config, an error will be raised. "
-                  "Consider running this in an environment with dateutil installed")
+    warnings.warn(
+        "pytz not found; timezone conversion will not be possible. That is, if "
+        "a non-local timezone is specified in the config, an error will be raised. "
+        "Consider running this in an environment with dateutil installed"
+    )
 try:
     from tzlocal import get_localzone
 except ImportError:
-    warnings.warn("tzlocal not found; timezone conversion will not be possible. That is, if "
-                  "a non-local timezone is specified in the config, an error will be raised. "
-                  "Consider running this in an environment with dateutil installed")
+    warnings.warn(
+        "tzlocal not found; timezone conversion will not be possible. That is, if "
+        "a non-local timezone is specified in the config, an error will be raised. "
+        "Consider running this in an environment with dateutil installed"
+    )
 
+from .handlers import TqdmLoggingHandler
 from .logcollator import LogCollator
 from .util import read_config
-from .handlers import TqdmLoggingHandler
 
 logger = logging.getLogger(__name__)
 
 
-CONFIG_SEARCH_PATHS = [os.path.realpath(path) for path in [
-    os.path.join(os.path.expanduser('~'), '.cl_config.yaml'),
-    './config.yaml',
-    (os.path.join(os.path.dirname(__file__), 'example_config.yaml'))
-]]
+CONFIG_SEARCH_PATHS = [
+    os.path.realpath(path)
+    for path in [
+        os.path.join(os.path.expanduser("~"), ".cl_config.yaml"),
+        "./config.yaml",
+        os.path.join(os.path.dirname(__file__), "defaults.yaml"),
+    ]
+]
 
-REQUIRED_CONFIG_FIELDS = ['log_parsing_info', 'line_output_format']
+REQUIRED_CONFIG_FIELDS = ["log_parsing_info", "line_output_format"]
 
 LOCAL_TIMEZONE = get_localzone()
 
@@ -49,39 +56,56 @@ class ConfigFileError(ValueError):
 def check_config(config):
     for field in REQUIRED_CONFIG_FIELDS:
         if field not in config:
-            raise ConfigFileError("Field {} is a required field, but is absent from the config!".format(field))
-
-        if not config['log_parsing_info']:
-            raise ConfigFileError("log_parsing_info must have at least one entry!")
-
-    for info_index, info in enumerate(config['log_parsing_info']):
-        if 'regex' not in info:
             raise ConfigFileError(
-                "log_parsing_info[{}] does not contain a regex key"
-                .format(info_index)
+                "Field {} is a required field, but is absent from the config!".format(
+                    field
+                )
             )
 
-        if 'timestamp_input_timezone' in info or 'timestamp_output_timezone' in info:
-            if 'timestamp_input_timezone' in info:
-                logger.debug("Converting timestamp_input_timezone (%s) to timezone object",
-                             info['timestamp_input_timezone'])
-                info['timestamp_input_timezone'] = timezone(info['timestamp_input_timezone'])
-            else:
-                logger.debug("Converting blank timestamp_input_timezone to local timezone object")
-                info['timestamp_input_timezone'] = LOCAL_TIMEZONE
-            if 'timestamp_output_timezone' in info:
-                logger.debug("Converting timestamp_output_timezone (%s) to timezone object",
-                             info['timestamp_output_timezone'])
-                info['timestamp_output_timezone'] = timezone(info['timestamp_output_timezone'])
-            else:
-                logger.debug("Converting blank timestamp_output_timezone to local timezone object")
-                info['timestamp_output_timezone'] = LOCAL_TIMEZONE
+        if not config["log_parsing_info"]:
+            raise ConfigFileError("log_parsing_info must have at least one entry!")
 
-            if info['timestamp_input_timezone'] == info['timestamp_output_timezone']:
-                logger.warning(
-                    "log_parsing_info[%s]'s timestamp_input_timezone and timestamp_output_timezone are both set to %s; "
-                    "conversion will accomplish nothing", info_index, info['timestamp_input_timezone']
-                )
+    for info_index, info in enumerate(config["log_parsing_info"]):
+        if "line_regex" not in info:
+            raise ConfigFileError(
+                "log_parsing_info[{}] does not contain a line_regex key".format(info_index)
+            )
+
+        # if "timestamp_input_timezone" in info or "timestamp_output_timezone" in info:
+        #     if "timestamp_input_timezone" in info:
+        #         logger.debug(
+        #             "Converting timestamp_input_timezone (%s) to timezone object",
+        #             info["timestamp_input_timezone"],
+        #         )
+        #         info["timestamp_input_timezone"] = timezone(
+        #             info["timestamp_input_timezone"]
+        #         )
+        #     else:
+        #         logger.debug(
+        #             "Converting blank timestamp_input_timezone to local timezone object"
+        #         )
+        #         info["timestamp_input_timezone"] = LOCAL_TIMEZONE
+        #     if "timestamp_output_timezone" in info:
+        #         logger.debug(
+        #             "Converting timestamp_output_timezone (%s) to timezone object",
+        #             info["timestamp_output_timezone"],
+        #         )
+        #         info["timestamp_output_timezone"] = timezone(
+        #             info["timestamp_output_timezone"]
+        #         )
+        #     else:
+        #         logger.debug(
+        #             "Converting blank timestamp_output_timezone to local timezone object"
+        #         )
+        #         info["timestamp_output_timezone"] = LOCAL_TIMEZONE
+
+        #     if info["timestamp_input_timezone"] == info["timestamp_output_timezone"]:
+        #         logger.warning(
+        #             "log_parsing_info[%s]'s timestamp_input_timezone and timestamp_output_timezone are both set to %s; "
+        #             "conversion will accomplish nothing",
+        #             info_index,
+        #             info["timestamp_input_timezone"],
+        #         )
 
 
 def find_config_file():
@@ -105,7 +129,7 @@ def parse_args():
     # Create a "dummy" parser that _only_ parses out the --config argument.
     # This is the first stage in the two-stage argument-parsing process
     _parser = argparse.ArgumentParser(add_help=False)
-    _parser.add_argument('-c', '--config')
+    _parser.add_argument("-c", "--config")
     # Parse only known args here so that the rest can be used below (--config)
     _args, remaining_args = _parser.parse_known_args()
 
@@ -116,80 +140,94 @@ def parse_args():
         # Otherwise look through common locations for the config. Error if one isn't found
         config, config_path = find_config_file()
         # No config key in the config file, so just set it here
-        config['config'] = config_path
+        config["config"] = config_path
 
     # Initialize the "real" parser
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
         description="A simple log collator. NOTE: Defaults are based on the selected "
-                    "config file (indicated by the default in --config). Arguments given here will always "
-                    "override the config file defaults",
-        prog="collatelogs"
+        "config file (indicated by the default in --config). Arguments given here will always "
+        "override the config file defaults",
+        prog="collatelogs",
     )
     # Use the config file to populate defaults for the rest of the arguments
     # NOTE: This also populates defaults for arguments that are never created --
     # this is important because args are treated as "the config" below
     parser.set_defaults(**config)
 
+    parser.add_argument("logs", metavar="PATH", nargs="+", help="Log file paths")
     parser.add_argument(
-        'logs',
-        metavar='PATH',
-        nargs='+',
-        help="Log file paths"
-    )
-    parser.add_argument(
-        '-t', '--parse-timestamps',
-        action='store_true',
+        "-t",
+        "--parse-timestamps",
+        action="store_true",
         help="Enable reformatting of datetime prefixes. This will be MUCH "
-             "slower! Uses the format indicated by --timestamp-output-format"
+        "slower! Uses the format indicated by --timestamp-output-format",
+    )
+    parser.add_argument("--line-regex")
+    parser.add_argument(
+        "--timestamp-input-format", metavar="FORMAT", help="",
     )
     parser.add_argument(
-        '-T', '--timestamp-output-format',
-        metavar='FORMAT',
+        "-T",
+        "--timestamp-output-format",
+        metavar="FORMAT",
         help="NOTE: If given, this will enable reformatting of datetime "
-             "prefixes. This will be much slower!"
+        "prefixes. This will be much slower!",
     )
     parser.add_argument(
-        '-L', '--line-output-format',
-        metavar='FORMAT',
-        help='The output format of the log line. This is a "new style"'
-             'format'
+        "--filename-date-regex",
+        metavar="FORMAT",
+        help="Parse dates from filenames using this regex",
     )
     parser.add_argument(
-        '-b', '--bad-line-behavior',
-        choices=('keep', 'discard', 'warn', 'error'),
+        "--filename-date-format",
+        metavar="FORMAT",
+        help="Parse date from filename using this time format string",
+    )
+    parser.add_argument(
+        "-L",
+        "--line-output-format",
+        metavar="FORMAT",
+        help='The output format of the log line. This is a "new style"' "format",
+    )
+    parser.add_argument(
+        "-b",
+        "--bad-line-behavior",
+        choices=("keep", "discard", "warn", "error"),
         help="Defines the action taken when a line is found that doesn't match any of the given line regexes. "
-             "keep: Keep the line in the output (this is almost certainly a _bad_ idea). discard: silently discard "
-             "non-matching lines. warn: Log warnings for each line that has been skipped. error: Raise an error at the first instance of non-matching"
+        "keep: Keep the line in the output (this is almost certainly a _bad_ idea). discard: silently discard "
+        "non-matching lines. warn: Log warnings for each line that has been skipped. error: Raise an error at the first instance of non-matching",
     )
     parser.add_argument(
-        '--allow-duplicates',
-        action='store_true',
+        "--allow-duplicates",
+        action="store_true",
         help="If given, don't remove duplicate log lines from the output. "
-             "NOTE: Lines are considered duplicate only if they are EXACTLY "
-             "the same, including timestamp"
+        "NOTE: Lines are considered duplicate only if they are EXACTLY "
+        "the same, including timestamp. DO NOT USE if your logs include lines "
+        "without timestamps",
     )
     parser.add_argument(
-        '--no-strip',
-        action='store_true',
-        help='Indicates that lines should not be stripped of whitespace'
+        "--no-strip",
+        action="store_true",
+        help="Indicates that lines should not be stripped of whitespace",
     )
     parser.add_argument(
-        '-c', '--config',
-        metavar='PATH',
+        "-c",
+        "--config",
+        metavar="PATH",
         help="The path to the config file. If this is not given, the "
-             "following paths will be searched: {}".format(
-                 [str(p) for p in CONFIG_SEARCH_PATHS]),
+        "following paths will be searched: {}".format(
+            [str(p) for p in CONFIG_SEARCH_PATHS]
+        ),
     )
     parser.add_argument(
-        '-P', '--no-progress',
-        action='store_true',
-        help="Indicate this if you don't want the progress bar (slightly faster)"
+        "-P",
+        "--no-progress",
+        action="store_true",
+        help="Indicate this if you don't want the progress bar (slightly faster)",
     )
     parser.add_argument(
-        '-v', '--verbose',
-        action='store_true',
-        help="Increase logging verbosity. NOTE: This will also hide tracebacks (error text still shown)!"
+        "-v", "--verbose", action="store_true", help="Increase logging verbosity",
     )
 
     parsed_args = parser.parse_args(remaining_args)
@@ -199,46 +237,56 @@ def parse_args():
     for log in parsed_args.logs:
         logs.extend(glob(log))
     if not logs:
-        parser.error('Either none of the given paths {} exist, or none of them '
-                     'contain files!'.format(parsed_args.logs))
+        parser.error(
+            "Either none of the given paths {} exist, or none of them "
+            "contain files!".format(parsed_args.logs)
+        )
     parsed_args.logs = logs
 
     return parser.parse_args(), config
+
+
+def execution_overview(args):
+    logger.debug("args: %s", args)
+    if logger.level <= logging.INFO:
+        logger.debug("--- Begin execution overview ---")
+        logger.debug("Parsing log lines based on the following information:")
+        for i, info in enumerate(args.log_parsing_info, 1):
+            label = info["name"] if "name" in info else i
+            logger.debug(f"SECTION: {label}")
+            logger.debug("  regex: %s", info["regex"])
+            logger.debug(
+                "  timezone: %s", info["timezone"] if "timezone" in info else "local",
+            )
+            logger.debug(
+                "  timestamp format: %s",
+                info["timestamp_input_format"]
+                if "timestamp_input_format" in info
+                else "None given; dateutil will be used to parse",
+            )
+
+        if args.parse_timestamps:
+            logger.debug(
+                "Reformatting timestamps into format: %s", args.timestamp_output_format
+            )
+        logger.debug("--- End execution overview ---")
 
 
 def main():
     """Entry point"""
 
     args, config = parse_args()
-
-
     if args.verbose:
-        logging.getLogger().setLevel(logging.DEBUG)
-        logger.debug("Set logging level to DEBUG")
+        init_logging(logging.DEBUG)
     else:
-        # Only show the error text from tracebacks if verbose mode not active
+        init_logging(logging.WARNING)
         sys.tracebacklimit = 0
 
     # Wait to check the config until here in order to respect --verbose
+    # TODO: FIX
     check_config(config)
 
     # Pull out the dict from args object and use it as "the config"
-    logger.debug("args: %s", args)
-    if logger.level <= logging.INFO:
-        logger.debug("--- Begin execution overview ---")
-        logger.debug("Parsing log lines based on the following information:")
-        for i, info in enumerate(args.log_parsing_info, 1):
-            logger.debug("  %d. regex: %s", i, info['regex'])
-            logger.debug("  %d. timezone: %s", i,
-                         info['timezone'] if 'timezone' in info else 'local')
-            logger.debug("  %d. timestamp format: %s", i,
-                         info['timestamp_input_format'] if 'timestamp_input_format' in info
-                         else 'None given; dateutil will be used to parse')
-
-        if args.parse_timestamps:
-            logger.debug("Reformatting timestamps into format: %s",
-                         args.timestamp_output_format)
-        logger.debug("--- End execution overview ---")
 
     # If user has not requested timestamp parsing, set timestamp_output_format to None
     # to indicate that it is not needed
@@ -247,18 +295,47 @@ def main():
     else:
         timestamp_output_format = None
 
+    log_parsing_info = config.get("log_parsing_info", None)
+    if log_parsing_info is None:
+        log_parsing_info = [
+            {
+                "line_regex": args.line_regex,
+                "timestamp_input_format": args.timestamp_input_format,
+                "filename_date_regex": args.filename_date_regex,
+                "filename_date_format": args.filename_date_format,
+            }
+        ]
+
     # Perform log collation
     lines = LogCollator(
         log_paths=args.logs,
         line_output_format=args.line_output_format,
         timestamp_output_format=timestamp_output_format,
-        log_parsing_info=args.log_parsing_info,
+        log_parsing_info=log_parsing_info,
         bad_line_behavior=args.bad_line_behavior,
         allow_duplicates=args.allow_duplicates,
+        # filename_date_regex=args.filename_date_regex,
+        # filename_date_format=args.filename_date_format,
     ).collate(show_progress=not args.no_progress)
-    
+
     # Prevent IOError after piping to less or similar: https://stackoverflow.com/a/30091579/1883424
     from signal import signal, SIGPIPE, SIG_DFL
-    signal(SIGPIPE, SIG_DFL) 
+
+    signal(SIGPIPE, SIG_DFL)
 
     print("\n".join(lines))
+
+
+def init_logging(level):
+    """Initialize logging"""
+    _logger = logging.getLogger("collatelogs")
+    # TODO: Make conditional on whether progress is requested/tqdm exists
+    console_handler = TqdmLoggingHandler(level=level)
+    # console_handler = logging.StreamHandler()
+    if level == logging.DEBUG:
+        console_handler.setFormatter(logging.Formatter("%(levelname)s %(module)s %(message)s"))
+    else:
+        console_handler.setFormatter(logging.Formatter("%(levelname)s %(message)s"))
+
+    _logger.addHandler(console_handler)
+    _logger.setLevel(level)

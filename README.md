@@ -8,6 +8,13 @@ In complicated projects, it is common to have an assortment of logs being genera
 
 However, the world is not perfect, and you may be dealing with a variety of log formats, perhaps (and most importantly) even differences in timestamp format. `collatelogs` handles the consumption of logs based on the given regular expressions, then collates them and outputs them in a common format (also configurable).
 
+## Features
+
+* Collating of logs with heterogeneous timestamp formats (i.e. )
+* Reformatting of log lines to a homogeneous format
+* Timestamp time zone conversion
+* Backfilling of missing timestamps 
+
 ## Installation
 
     $ pip install collatelogs
